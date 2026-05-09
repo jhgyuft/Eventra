@@ -1,6 +1,5 @@
 package com.example.eventra.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -23,22 +22,26 @@ class EventViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    fun fetchPopularEvents() {
-        _isLoading.value = true
-        // Gunakan Dummy Data jika Firebase belum siap
-        val dummyList = listOf(
-            Event("1", "Festival Musik Jakarta", "Gelora Bung Karno", "20 Mei 2026", "19:00", 150000, "Seru abis!", "Music", "", "Eventra", 100),
-            Event("2", "Tech Conference 2026", "ICE BSD", "15 Juni 2026", "09:00", 50000, "Belajar IT!", "Tech", "", "Eventra", 50)
+    private val allEvents = mutableListOf<Event>()
+
+    init {
+        // Data Dummy Premium agar aplikasi langsung terlihat hidup
+        val dummy = listOf(
+            Event("1", "Coldplay: Music of Spheres", "GBK Stadium", "20 May 2026", "19:00", 1500000, "Experience the magic.", "Music", "", "PK Ent", 100),
+            Event("2", "Global Tech Summit 2026", "ICE BSD City", "15 Jun 2026", "09:00", 250000, "Tech future is here.", "Tech", "", "TechAsia", 50),
+            Event("3", "Art & Soul Exhibition", "National Museum", "10 Jul 2026", "10:00", 50000, "Art for the soul.", "Art", "", "ArtVibe", 200),
+            Event("4", "Java Jazz Festival", "JIExpo", "25 May 2026", "16:00", 850000, "Jazz all night.", "Music", "", "JFP", 300),
+            Event("5", "Marathon Jakarta 2026", "Monas", "05 May 2026", "05:00", 350000, "Run the city.", "Sport", "", "JktSport", 1000)
         )
-        _popularEvents.value = dummyList
-        
+        allEvents.addAll(dummy)
+        _popularEvents.value = dummy.take(3)
+        _newestEvents.value = dummy
+        _searchResult.value = dummy
+    }
+
+    fun fetchPopularEvents() {
         repository.getPopularEvents().addSnapshotListener { value, error ->
-            _isLoading.value = false
-            if (error != null) {
-                Log.e("EventViewModel", "Error fetchPopular: ${error.message}")
-                return@addSnapshotListener
-            }
-            if (value != null && !value.isEmpty) {
+            if (error == null && value != null && !value.isEmpty) {
                 _popularEvents.value = value.toObjects(Event::class.java)
             }
         }
@@ -46,31 +49,38 @@ class EventViewModel : ViewModel() {
 
     fun fetchNewestEvents() {
         _isLoading.value = true
-        // Gunakan Dummy Data jika Firebase belum siap
-        val dummyList = listOf(
-            Event("3", "Pameran Seni Budaya", "Kota Tua", "10 Juli 2026", "10:00", 25000, "Seni klasik", "Art", "", "Eventra", 200)
-        )
-        _newestEvents.value = dummyList
-
         repository.getNewestEvents().addSnapshotListener { value, error ->
             _isLoading.value = false
-            if (error != null) {
-                Log.e("EventViewModel", "Error fetchNewest: ${error.message}")
-                return@addSnapshotListener
-            }
-            if (value != null && !value.isEmpty) {
-                _newestEvents.value = value.toObjects(Event::class.java)
+            if (error == null && value != null) {
+                val events = value.toObjects(Event::class.java)
+                if (events.isNotEmpty()) {
+                    allEvents.clear()
+                    allEvents.addAll(events)
+                    _newestEvents.value = events
+                    _searchResult.value = events
+                }
             }
         }
     }
 
     fun searchEvents(query: String) {
-        _isLoading.value = true
-        repository.searchEvents(query).addSnapshotListener { value, error ->
-            _isLoading.value = false
-            if (error == null && value != null) {
-                _searchResult.value = value.toObjects(Event::class.java)
-            }
+        if (query.isEmpty()) {
+            _searchResult.value = allEvents
+            _newestEvents.value = allEvents
+            return
         }
+        val filtered = allEvents.filter { 
+            it.namaEvent.contains(query, ignoreCase = true) || 
+            it.kategori.contains(query, ignoreCase = true) 
+        }
+        _searchResult.value = filtered
+        _newestEvents.value = filtered
+    }
+
+    fun filterByCategory(category: String) {
+        val filtered = if (category == "All") allEvents 
+                      else allEvents.filter { it.kategori.equals(category, ignoreCase = true) }
+        _newestEvents.value = filtered
+        _searchResult.value = filtered
     }
 }

@@ -1,17 +1,12 @@
 package com.example.eventra
 
 import android.app.Application
-import com.midtrans.sdk.uikit.SdkUIFlowBuilder
+import androidx.appcompat.app.AppCompatDelegate
 
 class EventraApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        
-        SdkUIFlowBuilder.init()
-            .setContext(this)
-            .setClientKey("SB-Mid-client-YOUR_CLIENT_KEY") // Replace with actual Client Key
-            .setMerchantBaseUrl("https://your-merchant-url.com/") // Replace with actual Merchant URL
-            .enableLog(true)
-            .buildSDK()
+        // PAKSA seluruh aplikasi menggunakan Mode Malam (Dark Mode)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
     }
 }

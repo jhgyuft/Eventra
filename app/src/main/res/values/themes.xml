@@ -1,28 +1,53 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Eventra" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Base application theme - FORCE DARK TOTAL -->
+    <style name="Base.Theme.Eventra" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary_gold</item>
-        <item name="android:statusBarColor">@color/bg_black</item>
-        <item name="android:windowBackground">@color/bg_black</item>
-        <item name="colorSurface">@color/bg_black</item>
-        <item name="colorOnSurface">@color/text_white</item>
+        <item name="android:statusBarColor">#0A0A0A</item>
+        <item name="android:windowBackground">#0A0A0A</item>
+        <item name="colorSurface">#0A0A0A</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        
+        <!-- CEGAH SISTEM MERUBAH WARNA (Solusi untuk HP Xiaomi/Samsung/dll) -->
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        
+        <!-- Default Text Colors Hardcoded -->
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#A0A0A0</item>
     </style>
 
     <style name="Theme.Eventra" parent="Base.Theme.Eventra" />
 
-    <style name="Theme.Eventra.Splash" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowBackground">@drawable/bg_main_gradient</item>
-        <item name="android:statusBarColor">@color/bg_dark_purple</item>
+    <!-- FIX: Tema Bottom Sheet Premium Dark - Paksa Teks Putih -->
+    <style name="BottomSheetDialogTheme" parent="Theme.Material3.Dark.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <item name="colorSurface">#0A0A0A</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <style name="BottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">#0A0A0A</item>
+        <item name="shapeAppearanceOverlay">@style/RoundedCard</item>
+    </style>
+
+    <!-- FIX: Tema Dialog Notifikasi (Teks Putih Terang) -->
+    <style name="CustomDialogTheme" parent="Theme.Material3.Dark.Dialog.Alert">
+        <item name="colorSurface">#161618</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#EEEEEE</item>
+        <item name="colorPrimary">@color/primary_gold</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>
 
     <style name="CircleImage" parent="">
         <item name="cornerSize">50%</item>
     </style>
-
     <style name="RoundedCard" parent="">
         <item name="cornerSize">28dp</item>
     </style>
-
     <style name="RoundedCorner8">
         <item name="cornerSize">8dp</item>
     </style>

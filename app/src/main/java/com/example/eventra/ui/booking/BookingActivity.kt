@@ -3,167 +3,98 @@ package com.example.eventra.ui.booking
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import com.example.eventra.data.model.Event
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.eventra.data.model.CartItem
 import com.example.eventra.data.model.Transaction
 import com.example.eventra.databinding.ActivityBookingBinding
+import com.example.eventra.ui.cart.CartAdapter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.midtrans.sdk.corekit.callback.TransactionFinishedCallback
-import com.midtrans.sdk.corekit.core.MidtransSDK
-import com.midtrans.sdk.corekit.core.TransactionRequest
-import com.midtrans.sdk.corekit.core.themes.CustomColorTheme
-import com.midtrans.sdk.corekit.models.BillingAddress
-import com.midtrans.sdk.corekit.models.CustomerDetails
-import com.midtrans.sdk.corekit.models.ItemDetails
-import com.midtrans.sdk.corekit.models.ShippingAddress
-import com.midtrans.sdk.corekit.models.snap.TransactionResult
-import com.midtrans.sdk.uikit.SdkUIFlowBuilder
 import java.text.NumberFormat
 import java.util.Locale
 
-class BookingActivity : AppCompatActivity(), TransactionFinishedCallback {
+class BookingActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBookingBinding
-    private var event: Event? = null
-    private var quantity = 1
-    private lateinit var auth: FirebaseAuth
-    private lateinit var db: FirebaseFirestore
+    private var cartItems = ArrayList<CartItem>()
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityBookingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        auth = FirebaseAuth.getInstance()
-        db = FirebaseFirestore.getInstance()
-        event = intent.getSerializableExtra("EVENT_DATA") as? Event
+        // Menerima list item dari Intent (Bisa banyak tiket)
+        @Suppress("UNCHECKED_CAST")
+        cartItems = intent.getSerializableExtra("CART_ITEMS") as? ArrayList<CartItem> ?: arrayListOf()
 
-        setupUI()
-        setupListeners()
-        setupMidtrans()
-    }
-
-    private fun setupMidtrans() {
-        // This is usually initialized in Application class, but we can ensure it's ready here if needed
-        // Or configure specific UI theme
-    }
-
-    private fun setupUI() {
-        event?.let {
-            binding.tvBookingEventName.text = it.namaEvent
-            binding.tvBookingDate.text = it.tanggal
-            Glide.with(this).load(it.poster).into(binding.ivBookingPoster)
-            updateTotalPrice()
-        }
-    }
-
-    private fun setupListeners() {
-        binding.btnPlus.setOnClickListener {
-            quantity++
-            binding.tvQty.text = quantity.toString()
-            updateTotalPrice()
+        if (cartItems.isEmpty()) {
+            Toast.makeText(this, "No items to checkout", Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
 
-        binding.btnMinus.setOnClickListener {
-            if (quantity > 1) {
-                quantity--
-                binding.tvQty.text = quantity.toString()
-                updateTotalPrice()
-            }
-        }
-
-        binding.btnPayNow.setOnClickListener {
-            startPayment()
-        }
+        setupRecyclerView()
+        calculateTotal()
+        
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnConfirmPay.setOnClickListener { processBatchPayment() }
     }
 
-    private fun updateTotalPrice() {
-        event?.let {
-            val total = it.harga * quantity
-            val localeID = Locale("in", "ID")
-            val formatRupiah = NumberFormat.getCurrencyInstance(localeID)
-            binding.tvTotalBookingPrice.text = formatRupiah.format(total)
-        }
+    private fun setupRecyclerView() {
+        // Menggunakan CartAdapter untuk menampilkan ringkasan di checkout
+        val adapter = CartAdapter(cartItems) { /* Disable delete in checkout */ }
+        binding.rvCheckoutItems.layoutManager = LinearLayoutManager(this)
+        binding.rvCheckoutItems.adapter = adapter
     }
 
-    private fun startPayment() {
-        val eventData = event ?: return
+    private fun calculateTotal() {
+        val total = cartItems.sumOf { it.totalItemPrice }
+        val priceFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
+            maximumFractionDigits = 0
+        }
+        binding.tvTotalCheckoutPrice.text = priceFormat.format(total)
+    }
+
+    private fun processBatchPayment() {
         val user = auth.currentUser ?: return
+        binding.btnConfirmPay.isEnabled = false
+        binding.btnConfirmPay.text = "Processing..."
+
+        val batch = db.batch()
         
-        val transactionId = "TRX-" + System.currentTimeMillis()
-        val totalAmount = (eventData.harga * quantity).toDouble()
-
-        val transactionRequest = TransactionRequest(transactionId, totalAmount)
-        
-        val itemDetails = ItemDetails(eventData.eventId, eventData.harga.toDouble(), quantity, eventData.namaEvent)
-        val itemDetailsList = ArrayList<ItemDetails>()
-        itemDetailsList.add(itemDetails)
-        transactionRequest.itemDetails = itemDetailsList
-
-        val customerDetails = CustomerDetails()
-        customerDetails.firstName = user.displayName ?: "User"
-        customerDetails.email = user.email
-        transactionRequest.customerDetails = customerDetails
-
-        MidtransSDK.getInstance().transactionRequest = transactionRequest
-        MidtransSDK.getInstance().startPaymentUiFlow(this)
-    }
-
-    override fun onTransactionFinished(result: TransactionResult) {
-        if (result.response != null) {
-            when (result.status) {
-                TransactionResult.STATUS_SUCCESS -> {
-                    saveTransactionToFirestore(result.response.transactionId, "Paid")
-                }
-                TransactionResult.STATUS_PENDING -> {
-                    saveTransactionToFirestore(result.response.transactionId, "Pending")
-                }
-                TransactionResult.STATUS_FAILED -> {
-                    Toast.makeText(this, "Payment Failed", Toast.LENGTH_SHORT).show()
-                }
-            }
-        } else if (result.isTransactionCanceled) {
-            Toast.makeText(this, "Transaction Canceled", Toast.LENGTH_SHORT).show()
-        } else {
-            if (result.status.equals(TransactionResult.STATUS_INVALID, true)) {
-                Toast.makeText(this, "Transaction Invalid", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Transaction Finished with failure", Toast.LENGTH_SHORT).show()
-            }
+        cartItems.forEach { item ->
+            val transactionId = "TRX-${System.currentTimeMillis()}-${item.cartId}"
+            val trxRef = db.collection("transactions").document(transactionId)
+            
+            val transaction = Transaction(
+                transactionId = transactionId,
+                uidUser = user.uid,
+                idEvent = item.eventId,
+                namaEvent = "${item.eventName} (${item.category})",
+                posterEvent = item.eventPoster,
+                tanggalEvent = item.eventDate,
+                jumlahTiket = item.quantity,
+                totalHarga = item.totalItemPrice,
+                statusPembayaran = "Paid",
+                metodePembayaran = "Balance/System",
+                createdAt = System.currentTimeMillis()
+            )
+            batch.set(trxRef, transaction)
+            
+            // Hapus dari keranjang setelah sukses
+            val cartRef = db.collection("users").document(user.uid).collection("cart").document(item.cartId)
+            batch.delete(cartRef)
         }
-    }
 
-    private fun saveTransactionToFirestore(midtransId: String, status: String) {
-        val uid = auth.currentUser?.uid ?: return
-        val eventData = event ?: return
-        
-        val transactionId = db.collection("transactions").document().id
-        val transaction = Transaction(
-            transactionId = transactionId,
-            uidUser = uid,
-            idEvent = eventData.eventId,
-            namaEvent = eventData.namaEvent,
-            posterEvent = eventData.poster,
-            tanggalEvent = eventData.tanggal,
-            jumlahTiket = quantity,
-            totalHarga = eventData.harga * quantity,
-            statusPembayaran = status,
-            metodePembayaran = "Midtrans",
-            createdAt = System.currentTimeMillis()
-        )
-
-        db.collection("transactions").document(transactionId).set(transaction)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Booking Successful with status: $status", Toast.LENGTH_LONG).show()
-                finish()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Failed to save transaction: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun processBooking() {
-        // Legacy method, replaced by startPayment
+        batch.commit().addOnSuccessListener {
+            Toast.makeText(this, "Payment Successful! Tickets added to your list.", Toast.LENGTH_LONG).show()
+            finish()
+        }.addOnFailureListener {
+            binding.btnConfirmPay.isEnabled = true
+            binding.btnConfirmPay.text = "Confirm and Pay"
+            Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 }

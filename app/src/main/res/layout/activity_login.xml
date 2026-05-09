@@ -42,7 +42,9 @@
             android:textSize="16sp" />
     </LinearLayout>
 
+    <!-- Menambahkan ID loginCard -->
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/loginCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
@@ -60,7 +62,9 @@
             android:orientation="vertical"
             android:padding="32dp">
 
+            <!-- Menambahkan ID tilEmail -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilEmail"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -82,7 +86,9 @@
                     android:textColor="@color/white" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Menambahkan ID tilPassword -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPassword"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

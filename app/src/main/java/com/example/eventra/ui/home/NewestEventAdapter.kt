@@ -1,14 +1,17 @@
 package com.example.eventra.ui.home
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.eventra.R
 import com.example.eventra.data.model.Event
 import com.example.eventra.databinding.ItemEventVerticalBinding
-import com.example.eventra.ui.detail.DetailEventActivity
+import com.example.eventra.utils.addClickScale
+import com.example.eventra.utils.slideUp
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -23,24 +26,30 @@ class NewestEventAdapter(private var events: List<Event>) : RecyclerView.Adapter
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val event = events[position]
+        
+        holder.itemView.slideUp(500, (position * 50).toLong())
+
         holder.binding.apply {
+            root.addClickScale(0.98f)
+            
             tvEventName.text = event.namaEvent
             tvEventDate.text = "${event.tanggal} • ${event.jam}"
             tvCategory.text = event.kategori
             
-            val priceFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+            val priceFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
+                maximumFractionDigits = 0
+            }
             tvEventPrice.text = if (event.harga == 0L) "Free" else priceFormat.format(event.harga)
 
             Glide.with(root.context)
                 .load(event.poster)
-                .placeholder(R.drawable.ic_launcher_background)
-                .error(R.drawable.ic_launcher_background)
+                .transition(DrawableTransitionOptions.withCrossFade(400))
+                .placeholder(R.drawable.bg_glass_card)
                 .into(ivEventPoster)
 
+            // Info Only: Tidak membuka detail/booking, hanya menampilkan pesan
             root.setOnClickListener {
-                val intent = Intent(root.context, DetailEventActivity::class.java)
-                intent.putExtra("EVENT_DATA", event)
-                root.context.startActivity(intent)
+                Toast.makeText(root.context, "This event will be available soon!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -48,7 +57,14 @@ class NewestEventAdapter(private var events: List<Event>) : RecyclerView.Adapter
     override fun getItemCount() = events.size
 
     fun updateData(newEvents: List<Event>) {
+        val diffCallback = object : DiffUtil.Callback() {
+            override fun getOldListSize() = events.size
+            override fun getNewListSize() = newEvents.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) = events[oldPos].eventId == newEvents[newPos].eventId
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) = events[oldPos] == newEvents[newPos]
+        }
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
         events = newEvents
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
     }
 }

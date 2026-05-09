@@ -8,7 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.eventra.databinding.FragmentExploreBinding
 import com.example.eventra.viewmodel.EventViewModel
 
@@ -17,6 +17,7 @@ class ExploreFragment : Fragment() {
     private var _binding: FragmentExploreBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: EventViewModel
+    private lateinit var eventAdapter: NewestEventAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,20 +38,16 @@ class ExploreFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        binding.rvExplore.layoutManager = GridLayoutManager(requireContext(), 2)
-        // Adapter will be set here
+        eventAdapter = NewestEventAdapter(listOf())
+        binding.rvExplore.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvExplore.adapter = eventAdapter
     }
 
     private fun setupSearch() {
         binding.etSearchExplore.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s.toString()
-                if (query.isNotEmpty()) {
-                    viewModel.searchEvents(query)
-                } else {
-                    viewModel.fetchNewestEvents()
-                }
+                viewModel.searchEvents(s.toString())
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -62,13 +59,14 @@ class ExploreFragment : Fragment() {
         }
 
         viewModel.searchResult.observe(viewLifecycleOwner) { events ->
-            if (events.isEmpty()) {
+            if (events.isNullOrEmpty()) {
                 binding.emptyStateExplore.visibility = View.VISIBLE
                 binding.rvExplore.visibility = View.GONE
+                eventAdapter.updateData(listOf())
             } else {
                 binding.emptyStateExplore.visibility = View.GONE
                 binding.rvExplore.visibility = View.VISIBLE
-                // Update adapter
+                eventAdapter.updateData(events)
             }
         }
         

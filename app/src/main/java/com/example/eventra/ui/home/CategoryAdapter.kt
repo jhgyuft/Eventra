@@ -6,10 +6,18 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.eventra.R
 import com.example.eventra.databinding.ItemCategoryBinding
+import com.example.eventra.utils.addClickScale
 
 data class Category(val name: String, val icon: Int)
 
-class CategoryAdapter(private val categories: List<Category>) : RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
+/**
+ * CategoryAdapter - Refined Premium Version
+ * Fokus: Smooth selection transitions, tactile feedback, dan consistent branding.
+ */
+class CategoryAdapter(
+    private val categories: List<Category>,
+    private val onCategorySelected: (Category) -> Unit
+) : RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
 
     private var selectedPosition = 0
 
@@ -22,29 +30,57 @@ class CategoryAdapter(private val categories: List<Category>) : RecyclerView.Ada
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val category = categories[position]
+        val context = holder.itemView.context
+        val isSelected = selectedPosition == position
+        
         holder.binding.apply {
+            // Tactile feedback: Efek membal saat ditekan
+            root.addClickScale(0.92f)
+            
             tvCategoryName.text = category.name
             ivCategoryIcon.setImageResource(category.icon)
 
-            val isSelected = selectedPosition == position
-            root.setCardBackgroundColor(
-                if (isSelected) ContextCompat.getColor(root.context, R.color.primary_gold)
-                else ContextCompat.getColor(root.context, R.color.card_dark)
-            )
-            tvCategoryName.setTextColor(
-                if (isSelected) ContextCompat.getColor(root.context, R.color.bg_black)
-                else ContextCompat.getColor(root.context, R.color.text_gray)
-            )
-            ivCategoryIcon.setColorFilter(
-                if (isSelected) ContextCompat.getColor(root.context, R.color.bg_black)
-                else ContextCompat.getColor(root.context, R.color.primary_gold)
-            )
+            // Premium Selection Logic
+            if (isSelected) {
+                // State: Selected (Glowing Gold)
+                iconContainer.setBackgroundResource(R.drawable.bg_category_icon_glow)
+                ivCategoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.primary_gold))
+                tvCategoryName.setTextColor(ContextCompat.getColor(context, R.color.primary_gold))
+                tvCategoryName.alpha = 1.0f
+                
+                // Animation: Pop-up effect untuk kategori yang dipilih
+                root.animate()
+                    .scaleX(1.1f)
+                    .scaleY(1.1f)
+                    .setDuration(250)
+                    .setInterpolator(android.view.animation.OvershootInterpolator())
+                    .start()
+            } else {
+                // State: Unselected (Subtle Glassmorphism)
+                iconContainer.setBackgroundResource(R.drawable.bg_glass_card)
+                ivCategoryIcon.setColorFilter(ContextCompat.getColor(context, R.color.text_dim))
+                tvCategoryName.setTextColor(ContextCompat.getColor(context, R.color.text_gray))
+                tvCategoryName.alpha = 0.6f
+                
+                // Animation: Return to normal size
+                root.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+            }
 
             root.setOnClickListener {
-                val oldPos = selectedPosition
-                selectedPosition = holder.adapterPosition
-                notifyItemChanged(oldPos)
-                notifyItemChanged(selectedPosition)
+                if (selectedPosition != holder.adapterPosition) {
+                    val oldPos = selectedPosition
+                    selectedPosition = holder.adapterPosition
+                    
+                    // Update visual hanya pada item yang berubah (High Performance)
+                    notifyItemChanged(oldPos)
+                    notifyItemChanged(selectedPosition)
+                    
+                    onCategorySelected(category)
+                }
             }
         }
     }
