@@ -1,0 +1,29 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Eventra" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_gold</item>
+        <item name="android:statusBarColor">@color/bg_black</item>
+        <item name="android:windowBackground">@color/bg_black</item>
+        <item name="colorSurface">@color/bg_black</item>
+        <item name="colorOnSurface">@color/text_white</item>
+    </style>
+
+    <style name="Theme.Eventra" parent="Base.Theme.Eventra" />
+
+    <style name="Theme.Eventra.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/bg_main_gradient</item>
+        <item name="android:statusBarColor">@color/bg_dark_purple</item>
+    </style>
+
+    <style name="CircleImage" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="RoundedCard" parent="">
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="RoundedCorner8">
+        <item name="cornerSize">8dp</item>
+    </style>
+</resources>
