@@ -160,6 +160,10 @@
             app:layout_constraintTop_toBottomOf="@id/statsCard">
 
             <include android:id="@+id/menuEditProfile" layout="@layout/item_profile_menu" />
+            <include
+                android:id="@+id/menuAdminPanel"
+                layout="@layout/item_profile_menu"
+                android:visibility="gone" />
             <include android:id="@+id/menuPurchaseHistory" layout="@layout/item_profile_menu" />
             <include android:id="@+id/menuNotificationSettings" layout="@layout/item_profile_menu" />
             <include android:id="@+id/menuPrivacyPolicy" layout="@layout/item_profile_menu" />

@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Eventra</string>
+    <string name="category_all">Semua</string>
+    <string name="category_music">Musik</string>
+    <string name="category_tech">Teknologi</string>
+    <string name="category_art">Seni</string>
     <string name="title_payment_failed">Payment Failed</string>
     <string name="title_payment_success">Payment Success</string>
     <string name="title_payment_pending">Payment Pending</string>

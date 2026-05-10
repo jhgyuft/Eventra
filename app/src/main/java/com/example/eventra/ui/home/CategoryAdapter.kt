@@ -71,14 +71,11 @@ class CategoryAdapter(
             }
 
             root.setOnClickListener {
-                if (selectedPosition != holder.adapterPosition) {
+                if (selectedPosition != position) {
                     val oldPos = selectedPosition
-                    selectedPosition = holder.adapterPosition
-                    
-                    // Update visual hanya pada item yang berubah (High Performance)
+                    selectedPosition = position
                     notifyItemChanged(oldPos)
                     notifyItemChanged(selectedPosition)
-                    
                     onCategorySelected(category)
                 }
             }
